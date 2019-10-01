@@ -1,0 +1,14 @@
+{
+  "Parameters" : {
+    "SourceBucketName": "source-bucket-image-labeling",
+    "TargetBucketName": "target-bucket-image-labeling",
+    "FrontendBucketName": "frontend-bucket-image-labeling",
+    "Version": "v1"
+  }
+}
+
+
+
+
+
+

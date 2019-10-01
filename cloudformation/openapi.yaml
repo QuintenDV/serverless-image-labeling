@@ -1,0 +1,171 @@
+openapi: "3.0.1"
+info:
+  title: "Image Labeling API"
+  version: "1.0"
+  description: "OpenAPI Definition for the Image labeling tool"
+paths:
+  # Put image in source bucket
+  /image/upload:
+    post:
+      summary: "Uploads images from the given urls into the source bucket"
+      requestBody:
+        description: 'Put an image in the source bucket'
+        tags:
+        - Endpoints
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                urls:
+                  type: array
+                  items:
+                    type: string
+              required:
+                - urls
+            example:
+               urls:
+                - http://url_to_image
+                - http://other_url_to_image
+      responses:
+        200:
+          description: "Object was uploaded sucessfully"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: 200
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        uri:
+          "Fn::Sub":
+            - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ScraperLambda}/invocations"
+            - {ScraperLambda: {"Fn::GetAtt": ["ScraperLambda", "Arn"]}}
+        passthroughBehavior: "when_no_match"
+        credentials: {"Fn::GetAtt": [ "ApiGatewayIAMRole", "Arn" ]}
+        httpMethod: "POST"
+        type: "aws"
+    options:
+      responses:
+        200:
+          description: "Default response for CORS method"
+          tags:
+          - CORS
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'*'"
+              method.response.header.Access-Control-Allow-Headers: "'*'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        passthroughBehavior: "when_no_match"
+        credentials: {"Fn::GetAtt": [ "ApiGatewayIAMRole", "Arn" ]}
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        type: "mock"
+
+  # Move image from the sourceBucket to the targetBucket
+  /image/label:
+    post:
+      requestBody:
+        summary: 'Moves the images from the sourceBucket to the targetBucket'
+        description: ''
+        required: true
+        tags:
+        - Endpoints
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                key:
+                  type: string
+                label:
+                  type: string
+              required:
+                - key
+                - label
+            example:
+               key: 8496-4654-9489.jpg
+               label: label1
+      responses:
+        200:
+          description: "Image was moved succesfully"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        uri:
+          "Fn::Sub":
+            - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ManagerLambda}/invocations"
+            - {ManagerLambda: {"Fn::GetAtt": ["ManagerLambda", "Arn"]}}
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        timeoutInMillis: 5s
+        contentHandling: "CONVERT_TO_TEXT"
+        credentials: {"Fn::GetAtt": [ "ApiGatewayIAMRole", "Arn" ]}
+        type: "aws"
+    options:
+      summary: ""
+      responses:
+        200:
+          description: "Default response for CORS method"
+          tags:
+          - CORS
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'*'"
+              method.response.header.Access-Control-Allow-Headers: "'*'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        passthroughBehavior: "when_no_match"
+        credentials: {"Fn::GetAtt": [ "ApiGatewayIAMRole", "Arn" ]}
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        type: "mock"
