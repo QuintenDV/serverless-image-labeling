@@ -22,7 +22,7 @@ Resources:
         Fn::Transform:
           Name: AWS::Include
           Parameters:
-            Location: s3://serverless-build-artifacts/image-labeling/c8e4ced19a54f0c309b16ae8453cbe54
+            Location: s3://serverless-build-artifacts/image-labeling/36afb90673d99d2885c39c15723bde35
       Name:
         Fn::Sub: ImageLabeling-API-
       StageName:
@@ -57,7 +57,7 @@ Resources:
     Type: AWS::IAM::Role
   ManagerLambda:
     Properties:
-      CodeUri: s3://serverless-build-artifacts/image-labeling/e454af54a6b77ce60bbd79dfa6bdc7bf
+      CodeUri: s3://serverless-build-artifacts/image-labeling/ed5e537cdce58c0651d2abecf2317968
       Description: Lambda that moves the images from the source bucket to the target
         bucket
       Environment:
