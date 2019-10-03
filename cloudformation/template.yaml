@@ -16,6 +16,10 @@ Parameters:
     Type: String
 
 Resources:
+#---------------------------#
+#------ IAM Roles
+#---------------------------#
+
   ManagerLambdaIAMRole:
     Type: AWS::IAM::Role
     Properties:
@@ -103,13 +107,18 @@ Resources:
                 - Fn::GetAtt:
                   - ManagerLambda
                   - Arn
-                - Fn::GetAtt:
-                  - ScraperLambda
-                  - Arn
+                # - Fn::GetAtt:
+                #   - ScraperLambda
+                #   - Arn
+
+#---------------------------#
+#------ API GATEWAY
+#---------------------------#
+
   ApiGateway:
     Type: AWS::Serverless::Api
     DependsOn:
-      - ScraperLambda
+      # - ScraperLambda
       - ManagerLambda
     Properties:
       Name: !Sub "ImageLabeling-API-"
@@ -120,13 +129,17 @@ Resources:
           Parameters:
             Location: openapi.yaml
 
+#---------------------------#
+#------ AWS LAMBDA
+#---------------------------#
+
   ManagerLambda:
     Type: AWS::Serverless::Function
     Properties:
-      Name: !Sub "ImageLabeling-ManagerLambda"
-      Handler: function.process
-      Runtime: nodejs:10
-      CodeUri: ../lambdas/Manager/target/package.zip
+      FunctionName: "ImageLabeling-ManagerLambda"
+      Handler: function.handler
+      Runtime: nodejs10.x
+      CodeUri: ../lambdas/manager/target/package.zip
       Description: Lambda that moves the images from the source bucket to the target bucket
       MemorySize: 128
       Timeout: 5
@@ -137,24 +150,29 @@ Resources:
       Environment:
         Variables:
           SourceBucketName: !Sub "${SourceBucketName}"
-
-  ScraperLambda:
-    Type: AWS::Serverless::Function
-    Properties:
-      Name: !Sub "ImageLabeling-ScraperLambda"
-      Handler: function.process
-      Runtime: python3.7
-      CodeUri: ../lambdas/Scraper/target/package.zip
-      Description: Periodically download images from Reddit into the SourceBucket
-      MemorySize: 256
-      Timeout: 20
-      Role:
-        Fn::GetAtt:
-          - ScraperLambdaIAMRole
-          - Arn
-      Environment:
-        Variables:
           TargetBucketName: !Sub "${TargetBucketName}"
+
+  # ScraperLambda:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     FunctionName: !Sub "ImageLabeling-ScraperLambda"
+  #     Handler: function.process
+  #     Runtime: python3.7
+  #     CodeUri: ../lambdas/Scraper/target/package.zip
+  #     Description: Periodically download images from Reddit into the SourceBucket
+  #     MemorySize: 256
+  #     Timeout: 20
+  #     Role:
+  #       Fn::GetAtt:
+  #         - ScraperLambdaIAMRole
+  #         - Arn
+  #     Environment:
+  #       Variables:
+  #         TargetBucketName: !Sub "${TargetBucketName}"
+
+#---------------------------#
+#------ S3 BUCKETS
+#---------------------------#
 
   SourceBucket:
     Type: AWS::S3::Bucket
@@ -183,15 +201,15 @@ Resources:
             AllowedHeaders:
               - "*"
 
-  FrontendBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Sub "${FrontendBucketName}"
-      CorsConfiguration:
-        CorsRules:
-          - AllowedMethods:
-              - GET
-            AllowedOrigins:
-              - "*"
-            AllowedHeaders:
-              - "*"
+  # FrontendBucket:
+  #   Type: AWS::S3::Bucket
+  #   Properties:
+  #     BucketName: !Sub "${FrontendBucketName}"
+  #     CorsConfiguration:
+  #       CorsRules:
+  #         - AllowedMethods:
+  #             - GET
+  #           AllowedOrigins:
+  #             - "*"
+  #           AllowedHeaders:
+  #             - "*"

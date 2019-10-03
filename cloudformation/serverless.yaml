@@ -1,0 +1,164 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Image labeling tool
+Parameters:
+  FrontendBucketName:
+    Description: Name of the S3 bucket used to store the images that have been labeled.
+    Type: String
+  SourceBucketName:
+    Description: Name of the S3 bucket used to store the images that still need to
+      be labeled.
+    Type: String
+  TargetBucketName:
+    Description: Name of the S3 bucket used to store the images that have been labeled.
+    Type: String
+  Version:
+    Type: String
+Resources:
+  ApiGateway:
+    DependsOn:
+    - ManagerLambda
+    Properties:
+      DefinitionBody:
+        Fn::Transform:
+          Name: AWS::Include
+          Parameters:
+            Location: s3://serverless-build-artifacts/image-labeling/c8e4ced19a54f0c309b16ae8453cbe54
+      Name:
+        Fn::Sub: ImageLabeling-API-
+      StageName:
+        Ref: Version
+    Type: AWS::Serverless::Api
+  ApiGatewayIAMRole:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service: apigateway.amazonaws.com
+          Sid: ''
+        Version: '2012-10-17'
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
+      - arn:aws:iam::aws:policy/AWSLambdaFullAccess
+      Policies:
+      - PolicyDocument:
+          Statement:
+          - Action:
+            - lambda:InvokeFunction
+            Effect: Allow
+            Resource:
+            - Fn::GetAtt:
+              - ManagerLambda
+              - Arn
+          Version: '2012-10-17'
+        PolicyName: LambdaServiceRolePolicy
+      RoleName: api.role.imagelabeling
+    Type: AWS::IAM::Role
+  ManagerLambda:
+    Properties:
+      CodeUri: s3://serverless-build-artifacts/image-labeling/e454af54a6b77ce60bbd79dfa6bdc7bf
+      Description: Lambda that moves the images from the source bucket to the target
+        bucket
+      Environment:
+        Variables:
+          SourceBucketName:
+            Fn::Sub: ${SourceBucketName}
+          TargetBucketName:
+            Fn::Sub: ${TargetBucketName}
+      FunctionName: ImageLabeling-ManagerLambda
+      Handler: function.handler
+      MemorySize: 128
+      Role:
+        Fn::GetAtt:
+        - ManagerLambdaIAMRole
+        - Arn
+      Runtime: nodejs10.x
+      Timeout: 5
+    Type: AWS::Serverless::Function
+  ManagerLambdaIAMRole:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Sid: ''
+        Version: '2012-10-17'
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
+      Policies:
+      - PolicyDocument:
+          Statement:
+          - Action:
+            - s3:Get*
+            - s3:List*
+            Effect: Allow
+            Resource:
+            - Fn::Sub: arn:aws:s3:::${SourceBucketName}
+            - Fn::Sub: arn:aws:s3:::${SourceBucketName}/*
+          - Action:
+            - s3:Put*
+            Effect: Allow
+            Resource:
+            - Fn::Sub: arn:aws:s3:::${TargetBucketName}
+            - Fn::Sub: arn:aws:s3:::${TargetBucketName}/*
+          Version: '2012-10-17'
+        PolicyName: ManagerRolePolicy
+      RoleName: managerlambda.role.imagelabeling
+    Type: AWS::IAM::Role
+  ScraperLambdaIAMRole:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Sid: ''
+        Version: '2012-10-17'
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
+      Policies:
+      - PolicyDocument:
+          Statement:
+          - Action:
+            - s3:Put*
+            - s3:List*
+            Effect: Allow
+            Resource:
+            - Fn::Sub: arn:aws:s3:::${SourceBucketName}
+            - Fn::Sub: arn:aws:s3:::${SourceBucketName}/*
+          Version: '2012-10-17'
+        PolicyName: ScraperRolePolicy
+      RoleName: scraperlambda.role.imagelabeling
+    Type: AWS::IAM::Role
+  SourceBucket:
+    Properties:
+      BucketName:
+        Fn::Sub: ${SourceBucketName}
+      CorsConfiguration:
+        CorsRules:
+        - AllowedHeaders:
+          - '*'
+          AllowedMethods:
+          - PUT
+          - GET
+          AllowedOrigins:
+          - '*'
+    Type: AWS::S3::Bucket
+  TargetBucket:
+    Properties:
+      BucketName:
+        Fn::Sub: ${TargetBucketName}
+      CorsConfiguration:
+        CorsRules:
+        - AllowedHeaders:
+          - '*'
+          AllowedMethods:
+          - PUT
+          AllowedOrigins:
+          - '*'
+    Type: AWS::S3::Bucket
+Transform: AWS::Serverless-2016-10-31
