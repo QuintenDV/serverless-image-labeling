@@ -4,14 +4,20 @@ Parameters:
   FrontendBucketName:
     Description: Name of the S3 bucket used to store the images that have been labeled.
     Type: String
+  PrawClientId:
+    Type: String
+  PrawClientSecret:
+    Type: String
+  Region:
+    Type: String
   SourceBucketName:
     Description: Name of the S3 bucket used to store the images that still need to
       be labeled.
     Type: String
+  Stage:
+    Type: String
   TargetBucketName:
     Description: Name of the S3 bucket used to store the images that have been labeled.
-    Type: String
-  Version:
     Type: String
 Resources:
   ApiGateway:
@@ -26,7 +32,7 @@ Resources:
       Name:
         Fn::Sub: ImageLabeling-API-
       StageName:
-        Ref: Version
+        Ref: Stage
     Type: AWS::Serverless::Api
   ApiGatewayIAMRole:
     Properties:
@@ -57,7 +63,7 @@ Resources:
     Type: AWS::IAM::Role
   ManagerLambda:
     Properties:
-      CodeUri: s3://serverless-build-artifacts/image-labeling/ed5e537cdce58c0651d2abecf2317968
+      CodeUri: s3://serverless-build-artifacts/image-labeling/00663cfe6a5cc6fd9a7d54ecd0074ee4
       Description: Lambda that moves the images from the source bucket to the target
         bucket
       Environment:
@@ -73,7 +79,7 @@ Resources:
         Fn::GetAtt:
         - ManagerLambdaIAMRole
         - Arn
-      Runtime: nodejs10.x
+      Runtime: python3.7
       Timeout: 5
     Type: AWS::Serverless::Function
   ManagerLambdaIAMRole:
@@ -94,6 +100,7 @@ Resources:
           - Action:
             - s3:Get*
             - s3:List*
+            - s3:Put*
             Effect: Allow
             Resource:
             - Fn::Sub: arn:aws:s3:::${SourceBucketName}
@@ -108,6 +115,35 @@ Resources:
         PolicyName: ManagerRolePolicy
       RoleName: managerlambda.role.imagelabeling
     Type: AWS::IAM::Role
+  ScraperLambda:
+    Properties:
+      CodeUri: s3://serverless-build-artifacts/image-labeling/4e16ff771998aa2a7adaca63a458e120
+      Description: Periodically download images from Reddit into the SourceBucket
+      Environment:
+        Variables:
+          API_BASE_URL:
+            Fn::Join:
+            - ''
+            - - https://
+              - Ref: ApiGateway
+              - Fn::Sub: .execute-api.${Region}.amazonaws.com/${Stage}
+          PRAW_CLIENT_ID:
+            Fn::Sub: ${PrawClientId}
+          PRAW_SECRET:
+            Fn::Sub: ${PrawClientSecret}
+          TargetBucketName:
+            Fn::Sub: ${TargetBucketName}
+      FunctionName:
+        Fn::Sub: ImageLabeling-ScraperLambda
+      Handler: function.process
+      MemorySize: 256
+      Role:
+        Fn::GetAtt:
+        - ScraperLambdaIAMRole
+        - Arn
+      Runtime: python3.7
+      Timeout: 20
+    Type: AWS::Serverless::Function
   ScraperLambdaIAMRole:
     Properties:
       AssumeRolePolicyDocument:

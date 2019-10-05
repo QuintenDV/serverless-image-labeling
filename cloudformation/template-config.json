@@ -3,7 +3,10 @@
     "SourceBucketName": "source-bucket-image-labeling",
     "TargetBucketName": "target-bucket-image-labeling",
     "FrontendBucketName": "frontend-bucket-image-labeling",
-    "Version": "v1"
+    "Stage": "v1",
+    "Region": "eu-west-1",
+    "PrawClientId": "w1Qt1SxmoMzKqg",
+    "PrawClientSecret": "fsV_LCr95sA_DJr9D6LqZnUOkAY"
   }
 }
 

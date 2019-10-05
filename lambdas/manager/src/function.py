@@ -1,9 +1,8 @@
 import boto3
 import os
-import base64
 import requests
-
-
+from io import StringIO,BytesIO
+import urllib.request
 
 s3 = boto3.client('s3')
 
@@ -13,7 +12,7 @@ try:
 except:
     print("Could not import ENV variables")
 
-def handler(event, context, callback):
+def handler(event, context):
     if 'source_key' in event:
         return label(event, context)
     elif 'imageUrl' in event:
@@ -76,7 +75,7 @@ def upload(event, context):
     target_key = imageUrl.split('/')[-1]
 
     # Get base64
-    data = base64.b64encode(requests.get(imageUrl).content)
+    data = BytesIO(urllib.request.urlopen(imageUrl).read()).read()
 
     params = {
         "Body": data,
@@ -94,13 +93,22 @@ if __name__ == "__main__":
     os.environ["SourceBucketName"] = "source-bucket-image-labeling"
     os.environ["TargetBucketName"] = "target-bucket-image-labeling"
 
-    test_event = {
-        "project": "doggos",
+    label_test_event = {
+        "project": "test_project",
+        "imageUrl": "https://hips.hearstapps.com/ghk.h-cdn.co/assets/17/30/2560x1280/landscape-1500925839-golden-retriever-puppy.jpg"
+    }
+    print(upload(label_test_event, None))
+
+    list_test_event = {
+        "project": "test_project",
+    }
+    print(getListImages(list_test_event, None))
+
+    label_test_event = {
+        "project": "test_project",
         # "imageUrl": "https://hips.hearstapps.com/ghk.h-cdn.co/assets/17/30/2560x1280/landscape-1500925839-golden-retriever-puppy.jpg"
-        "source_key": "25.jpg",
+        "source_key": "landscape-1500925839-golden-retriever-puppy.jpg",
         "label": "testing"
 
     }
-    # print(upload(test_event, None))
-    # print(getListImages(test_event, None))
-    print(label(test_event, None))
+    print(label(label_test_event, None))

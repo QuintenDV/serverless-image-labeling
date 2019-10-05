@@ -12,7 +12,13 @@ Parameters:
   FrontendBucketName:
     Type: String
     Description: Name of the S3 bucket used to store the images that have been labeled.
-  Version:
+  Stage:
+    Type: String
+  Region:
+    Type: String
+  PrawClientId:
+    Type: String
+  PrawClientSecret:
     Type: String
 
 Resources:
@@ -42,6 +48,7 @@ Resources:
           - Action:
             - s3:Get*
             - s3:List*
+            - s3:Put*
             Resource:
             - !Sub "arn:aws:s3:::${SourceBucketName}"
             - !Sub "arn:aws:s3:::${SourceBucketName}/*"
@@ -122,7 +129,7 @@ Resources:
       - ManagerLambda
     Properties:
       Name: !Sub "ImageLabeling-API-"
-      StageName: !Ref Version
+      StageName: !Ref Stage
       DefinitionBody:
         Fn::Transform:
           Name: AWS::Include
@@ -138,7 +145,7 @@ Resources:
     Properties:
       FunctionName: "ImageLabeling-ManagerLambda"
       Handler: function.handler
-      Runtime: nodejs10.x
+      Runtime: python3.7
       CodeUri: ../lambdas/manager/target/package.zip
       Description: Lambda that moves the images from the source bucket to the target bucket
       MemorySize: 128
@@ -152,23 +159,31 @@ Resources:
           SourceBucketName: !Sub "${SourceBucketName}"
           TargetBucketName: !Sub "${TargetBucketName}"
 
-  # ScraperLambda:
-  #   Type: AWS::Serverless::Function
-  #   Properties:
-  #     FunctionName: !Sub "ImageLabeling-ScraperLambda"
-  #     Handler: function.process
-  #     Runtime: python3.7
-  #     CodeUri: ../lambdas/Scraper/target/package.zip
-  #     Description: Periodically download images from Reddit into the SourceBucket
-  #     MemorySize: 256
-  #     Timeout: 20
-  #     Role:
-  #       Fn::GetAtt:
-  #         - ScraperLambdaIAMRole
-  #         - Arn
-  #     Environment:
-  #       Variables:
-  #         TargetBucketName: !Sub "${TargetBucketName}"
+  ScraperLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "ImageLabeling-ScraperLambda"
+      Handler: function.process
+      Runtime: python3.7
+      CodeUri: ../lambdas/scraper/target/package.zip
+      Description: Periodically download images from Reddit into the SourceBucket
+      MemorySize: 256
+      Timeout: 20
+      Role:
+        Fn::GetAtt:
+          - ScraperLambdaIAMRole
+          - Arn
+      Environment:
+        Variables:
+          TargetBucketName: !Sub "${TargetBucketName}"
+          PRAW_CLIENT_ID: !Sub "${PrawClientId}"
+          PRAW_SECRET: !Sub "${PrawClientSecret}"
+          API_BASE_URL:
+            Fn::Join:
+              - ""
+              - - "https://"
+                - Ref: ApiGateway
+                - !Sub ".execute-api.${Region}.amazonaws.com/${Stage}"
 
 #---------------------------#
 #------ S3 BUCKETS
