@@ -28,7 +28,7 @@ Resources:
         Fn::Transform:
           Name: AWS::Include
           Parameters:
-            Location: s3://serverless-build-artifacts/image-labeling/36afb90673d99d2885c39c15723bde35
+            Location: s3://serverless-build-artifacts/image-labeling/01a08e5fbbb25a9c43704c567b0e9265
       Name:
         Fn::Sub: ImageLabeling-API-
       StageName:
@@ -63,7 +63,7 @@ Resources:
     Type: AWS::IAM::Role
   ManagerLambda:
     Properties:
-      CodeUri: s3://serverless-build-artifacts/image-labeling/00663cfe6a5cc6fd9a7d54ecd0074ee4
+      CodeUri: s3://serverless-build-artifacts/image-labeling/394b3ae0aa79a9158036072694c0e283
       Description: Lambda that moves the images from the source bucket to the target
         bucket
       Environment:
@@ -117,7 +117,7 @@ Resources:
     Type: AWS::IAM::Role
   ScraperLambda:
     Properties:
-      CodeUri: s3://serverless-build-artifacts/image-labeling/4e16ff771998aa2a7adaca63a458e120
+      CodeUri: s3://serverless-build-artifacts/image-labeling/bf5c3176d260c4535a6959194b9f7053
       Description: Periodically download images from Reddit into the SourceBucket
       Environment:
         Variables:
