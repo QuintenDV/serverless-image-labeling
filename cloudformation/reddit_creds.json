@@ -1,0 +1,6 @@
+{
+    "Parameters" : {
+      "PrawClientId": "<<praw-client-id>>",
+      "PrawClientSecret": "<<praw-client-secret>>"
+    }
+}

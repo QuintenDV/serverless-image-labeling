@@ -4,6 +4,10 @@ import os
 with open(f'template-config.json') as ins:
     config = json.load(ins)
 
+
+with open(f'reddit_creds.json') as ins:
+    config = { **json.load(ins), **config }
+
 params = [f'{k}={v}' for k,v in config['Parameters'].items()]
 parameters_package = ','.join(params)
 parameters_deploy = ' '.join(params)
