@@ -18,16 +18,10 @@ paths:
             schema:
               type: object
               properties:
-                urls:
-                  type: array
-                  items:
-                    type: string
+                imageUrl:
+                  type: string
               required:
-                - urls
-            example:
-               urls:
-                - http://url_to_image
-                - http://other_url_to_image
+                - imageUrl
       responses:
         200:
           description: "Object was uploaded sucessfully"
@@ -51,22 +45,16 @@ paths:
           "Fn::Sub":
             - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ManagerLambda}/invocations"
             - {ManagerLambda: {"Fn::GetAtt": ["ManagerLambda", "Arn"]}}
-        requestTemplates:
-          application/json: >
-            {
-              "body" : $input.json('$'),
-              "action": "action-upload"
-            }
         passthroughBehavior: "when_no_match"
         credentials: {"Fn::GetAtt": [ "ApiGatewayIAMRole", "Arn" ]}
         httpMethod: "POST"
         type: "aws"
     options:
+      tags:
+      - CORS
       responses:
         200:
           description: "Default response for CORS method"
-          tags:
-          - CORS
           headers:
             Access-Control-Allow-Origin:
               schema:
@@ -108,14 +96,11 @@ paths:
             schema:
               type: object
               properties:
-                project:
-                  type: string
                 source_key:
                   type: string
                 label:
                   type: string
               required:
-                - project
                 - source_key
                 - label
       responses:
@@ -136,12 +121,6 @@ paths:
             statusCode: "200"
             responseParameters:
               method.response.header.Access-Control-Allow-Origin: "'*'"
-        requestTemplates:
-          application/json: >
-            {
-              "body" : $input.json('$'),
-              "action": "action-label"
-            }
         passthroughBehavior: "when_no_match"
         httpMethod: "POST"
         timeoutInMillis: 5s
@@ -187,18 +166,6 @@ paths:
       summary: 'Get list of images still to be processed'
       tags:
       - Endpoints
-      requestBody:
-        description: ''
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                project:
-                  type: string
-              required:
-                - project
       responses:
         200:
           description: "List of images still to be labeled"
@@ -217,172 +184,9 @@ paths:
             statusCode: "200"
             responseParameters:
               method.response.header.Access-Control-Allow-Origin: "'*'"
-        requestTemplates:
-          application/json: >
-            {
-              "body" : $input.json('$'),
-              "action": "action-list-images"
-            }
         passthroughBehavior: "when_no_match"
         httpMethod: "POST"
-        timeoutInMillis: 5s
-        contentHandling: "CONVERT_TO_TEXT"
-        credentials: {"Fn::GetAtt": [ "ApiGatewayIAMRole", "Arn" ]}
-        type: "aws"
-    options:
-      summary: ""
-      tags:
-      - CORS
-      responses:
-        200:
-          description: "Default response for CORS method"
-          headers:
-            Access-Control-Allow-Origin:
-              schema:
-                type: "string"
-            Access-Control-Allow-Methods:
-              schema:
-                type: "string"
-            Access-Control-Allow-Headers:
-              schema:
-                type: "string"
-          content: {}
-      x-amazon-apigateway-integration:
-        responses:
-          default:
-            statusCode: "200"
-            responseParameters:
-              method.response.header.Access-Control-Allow-Methods: "'*'"
-              method.response.header.Access-Control-Allow-Headers: "'*'"
-              method.response.header.Access-Control-Allow-Origin: "'*'"
-            responseTemplates:
-              application/json: "{}\n"
-        passthroughBehavior: "when_no_match"
-        credentials: {"Fn::GetAtt": [ "ApiGatewayIAMRole", "Arn" ]}
-        requestTemplates:
-          application/json: "{\n  \"statusCode\" : 200\n}\n"
-        type: "mock"
-  /image/projects:
-    post:
-      summary: 'Get list of projects'
-      tags:
-      - Endpoints
-      requestBody:
-        description: ''
-        required: true
-        content: {}
-      responses:
-        200:
-          description: "List of projects"
-          headers:
-            Access-Control-Allow-Origin:
-              schema:
-                type: "string"
-          content: {}
-      x-amazon-apigateway-integration:
-        uri:
-          "Fn::Sub":
-            - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ManagerLambda}/invocations"
-            - {ManagerLambda: {"Fn::GetAtt": ["ManagerLambda", "Arn"]}}
-        responses:
-          default:
-            statusCode: "200"
-            responseParameters:
-              method.response.header.Access-Control-Allow-Origin: "'*'"
-        requestTemplates:
-          application/json: >
-            {
-              "body" : $input.json('$'),
-              "action": "action-projects"
-            }
-        passthroughBehavior: "when_no_match"
-        httpMethod: "POST"
-        timeoutInMillis: 3s
-        contentHandling: "CONVERT_TO_TEXT"
-        credentials: {"Fn::GetAtt": [ "ApiGatewayIAMRole", "Arn" ]}
-        type: "aws"
-    options:
-      summary: ""
-      tags:
-      - CORS
-      responses:
-        200:
-          description: "Default response for CORS method"
-          headers:
-            Access-Control-Allow-Origin:
-              schema:
-                type: "string"
-            Access-Control-Allow-Methods:
-              schema:
-                type: "string"
-            Access-Control-Allow-Headers:
-              schema:
-                type: "string"
-          content: {}
-      x-amazon-apigateway-integration:
-        responses:
-          default:
-            statusCode: "200"
-            responseParameters:
-              method.response.header.Access-Control-Allow-Methods: "'*'"
-              method.response.header.Access-Control-Allow-Headers: "'*'"
-              method.response.header.Access-Control-Allow-Origin: "'*'"
-            responseTemplates:
-              application/json: "{}\n"
-        passthroughBehavior: "when_no_match"
-        credentials: {"Fn::GetAtt": [ "ApiGatewayIAMRole", "Arn" ]}
-        requestTemplates:
-          application/json: "{\n  \"statusCode\" : 200\n}\n"
-        type: "mock"
-  /image/new-project:
-    post:
-      summary: 'Add a new project'
-      tags:
-      - Endpoints
-      requestBody:
-        description: ''
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                project_name:
-                  type: string
-                labels:
-                  type: array
-                  items:
-                    type: string
-              required:
-                - project_name
-                - labels
-      responses:
-        200:
-          description: "New project was added"
-          headers:
-            Access-Control-Allow-Origin:
-              schema:
-                type: "string"
-          content: {}
-      x-amazon-apigateway-integration:
-        uri:
-          "Fn::Sub":
-            - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ManagerLambda}/invocations"
-            - {ManagerLambda: {"Fn::GetAtt": ["ManagerLambda", "Arn"]}}
-        responses:
-          default:
-            statusCode: "200"
-            responseParameters:
-              method.response.header.Access-Control-Allow-Origin: "'*'"
-        requestTemplates:
-          application/json: >
-            {
-              "body" : $input.json('$'),
-              "action": "action-new-project"
-            }
-        passthroughBehavior: "when_no_match"
-        httpMethod: "POST"
-        timeoutInMillis: 3s
+        timeoutInMillis: 10s
         contentHandling: "CONVERT_TO_TEXT"
         credentials: {"Fn::GetAtt": [ "ApiGatewayIAMRole", "Arn" ]}
         type: "aws"

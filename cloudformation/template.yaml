@@ -216,15 +216,21 @@ Resources:
             AllowedHeaders:
               - "*"
 
-  # FrontendBucket:
-  #   Type: AWS::S3::Bucket
-  #   Properties:
-  #     BucketName: !Sub "${FrontendBucketName}"
-  #     CorsConfiguration:
-  #       CorsRules:
-  #         - AllowedMethods:
-  #             - GET
-  #           AllowedOrigins:
-  #             - "*"
-  #           AllowedHeaders:
-  #             - "*"
+  FrontendBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${FrontendBucketName}"
+      CorsConfiguration:
+        CorsRules:
+          - AllowedMethods:
+              - GET
+            AllowedOrigins:
+              - "*"
+            AllowedHeaders:
+              - "*"
+      PublicAccessBlockConfiguration:
+        BlockPublicPolicy: false
+        RestrictPublicBuckets: false
+      WebsiteConfiguration:
+        IndexDocument: "index.html"
+        ErrorDocument: "index.html"
