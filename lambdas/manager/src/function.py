@@ -14,6 +14,8 @@ except:
     raise Exception("Could not import ENV variables")
 
 def handler(event, context):
+    # Could use ApiGateway template mapping for this
+    # But that's for in version 2.0
     if "imageUrl" in event:
         return upload(event, context)
     if "label" in event:
@@ -22,39 +24,54 @@ def handler(event, context):
         return listImages(event, context)
 
 
+# Move image from the source bucket to the
+# target bucket with the correct prefix
+# corresponding to the label
 def label(event, context):
     source_key = event["source_key"]
     label = event["label"]
 
-    params = {
+    copy_params = {
         'CopySource': f'{srcBucket}/unlabeled/{source_key}',
         'Bucket': destBucket,
         'Key': f'{label}/{source_key}'
     }
+    delete_params = {
+        'Bucket': srcBucket,
+        'Key': f'unlabeled/{source_key}'
+    }
 
     try:
-        s3.copy_object(**params)
+        s3.copy_object(**copy_params)
+        s3.delete_object(**delete_params)
     except Exception as e:
+        # TODO
         raise e
 
+    return {'status': 'success'}
+
+# Return a list of images that still need to be labeled
 def listImages(event, context):
     params = {
         "Bucket": srcBucket,
-        "Prefix": f'unlabeled/',
+        "Prefix": 'unlabeled/',
         "MaxKeys": 50
     }
 
     try:
         data = s3.list_objects(**params)
     except Exception as e:
+        # TODO
         raise e
 
+    # Get the keys of the images
     images = []
     if 'Contents' in data:
         for entry in data['Contents']:
             if entry['Key'] != params['Prefix']:
                 images.append(entry['Key'])
 
+    # Generate a presigned url for the images that is valid for 1hr
     result = []
     for image in images:
         url = s3.generate_presigned_url(
@@ -65,12 +82,12 @@ def listImages(event, context):
         result.append({
             "key": image.split('/')[-1],
             "url": url
-        }
-        )
+            })
 
     return result
 
-
+# Upload an image to the source bucket
+# TODO allow uploading of multiple images at once
 def upload(event, context):
     imageUrl = event["imageUrl"]
     target_key = imageUrl.split('/')[-1]
@@ -87,7 +104,9 @@ def upload(event, context):
     try:
         s3.put_object(**params)
     except Exception as e:
+        # TODO
         return e
+    return {'status': 'ok'}
 
 if __name__ == "__main__":
     os.environ["SourceBucketName"] = "source-bucket-image-labeling"

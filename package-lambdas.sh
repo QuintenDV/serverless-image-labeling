@@ -6,7 +6,7 @@ for lambda in lambdas/* ; do
 
     mkdir $lambda/target/packages
     touch $lambda/target/packages/__init__.py # So dir isn't empty
-    ls $lambda
+
     if [ -f "$lambda/requirements.txt" ]; then
         pip install -r $lambda/requirements.txt --target $lambda/target/packages
     fi

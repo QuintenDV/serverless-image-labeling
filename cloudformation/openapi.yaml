@@ -121,14 +121,13 @@ paths:
             statusCode: "200"
             responseParameters:
               method.response.header.Access-Control-Allow-Origin: "'*'"
-        passthroughBehavior: "when_no_match"
         httpMethod: "POST"
-        timeoutInMillis: 5s
+        timeoutInMillis: 10000
         contentHandling: "CONVERT_TO_TEXT"
         credentials: {"Fn::GetAtt": [ "ApiGatewayIAMRole", "Arn" ]}
         type: "aws"
     options:
-      summary: ""
+      summary: "CORS support"
       tags:
       - CORS
       responses:
@@ -155,10 +154,7 @@ paths:
               method.response.header.Access-Control-Allow-Origin: "'*'"
             responseTemplates:
               application/json: "{}\n"
-        passthroughBehavior: "when_no_match"
         credentials: {"Fn::GetAtt": [ "ApiGatewayIAMRole", "Arn" ]}
-        requestTemplates:
-          application/json: "{\n  \"statusCode\" : 200\n}\n"
         type: "mock"
   # Get list of images to be processed
   /image/list:
@@ -184,14 +180,13 @@ paths:
             statusCode: "200"
             responseParameters:
               method.response.header.Access-Control-Allow-Origin: "'*'"
-        passthroughBehavior: "when_no_match"
         httpMethod: "POST"
-        timeoutInMillis: 10s
+        timeoutInMillis: 10000
         contentHandling: "CONVERT_TO_TEXT"
         credentials: {"Fn::GetAtt": [ "ApiGatewayIAMRole", "Arn" ]}
         type: "aws"
     options:
-      summary: ""
+      summary: "CORS support"
       tags:
       - CORS
       responses:
@@ -218,8 +213,5 @@ paths:
               method.response.header.Access-Control-Allow-Origin: "'*'"
             responseTemplates:
               application/json: "{}\n"
-        passthroughBehavior: "when_no_match"
         credentials: {"Fn::GetAtt": [ "ApiGatewayIAMRole", "Arn" ]}
-        requestTemplates:
-          application/json: "{\n  \"statusCode\" : 200\n}\n"
         type: "mock"

@@ -46,9 +46,7 @@ Resources:
           Version: '2012-10-17'
           Statement:
           - Action:
-            - s3:Get*
-            - s3:List*
-            - s3:Put*
+            - s3:*
             Resource:
             - !Sub "arn:aws:s3:::${SourceBucketName}"
             - !Sub "arn:aws:s3:::${SourceBucketName}/*"
@@ -114,9 +112,6 @@ Resources:
                 - Fn::GetAtt:
                   - ManagerLambda
                   - Arn
-                # - Fn::GetAtt:
-                #   - ScraperLambda
-                #   - Arn
 
 #---------------------------#
 #------ API GATEWAY
@@ -128,7 +123,7 @@ Resources:
       # - ScraperLambda
       - ManagerLambda
     Properties:
-      Name: !Sub "ImageLabeling-API-"
+      Name: !Sub "ImageLabeling-API"
       StageName: !Ref Stage
       DefinitionBody:
         Fn::Transform:
@@ -234,3 +229,53 @@ Resources:
       WebsiteConfiguration:
         IndexDocument: "index.html"
         ErrorDocument: "index.html"
+  FrontendBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref FrontendBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: "*"
+            Action: "s3:GetObject"
+            Resource: !Sub "arn:aws:s3:::${FrontendBucket}/*"
+
+#---------------------------#
+#------ Lambda schedule
+#---------------------------#
+
+# Schedule the lambda to run every 24 hours
+  ScheduledRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: "Call Scraper lamdda every 24 hours"
+      ScheduleExpression: "rate(1 day)"
+      State: "ENABLED"
+      Targets:
+        -
+          Arn:
+            Fn::GetAtt:
+              - "ScraperLambda"
+              - "Arn"
+          Id: "ScraperLambdaScheduleID"
+          Input: >
+            {
+              "subreddits": [
+                "aww",
+                "eyebleach"
+              ],
+              "number": 50
+            }
+
+  PermissionForEventsToInvokeLambda:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Ref: "ScraperLambda"
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn:
+        Fn::GetAtt:
+          - "ScheduledRule"
+          - "Arn"

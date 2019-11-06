@@ -5,6 +5,7 @@ import requests
 
 
 def reddit_login():
+    # Load credentials from env variables
     SECRET = os.environ['PRAW_SECRET']
     CLIENT_ID = os.environ['PRAW_CLIENT_ID']
 
@@ -30,6 +31,7 @@ def process_submission(subm):
     file_name = url.split("/")[-1]
 
     # Check if it's a jpeg or png
+    # We're not actually checking mimetype of the file, so this is not very safe
     if "." not in file_name or not any([file_name.endswith(ext) for ext in ['jpg', 'png']]):
         return None
 
@@ -38,6 +40,7 @@ def process_submission(subm):
 def extract_images_from_subreddit(reddit, subr, n_images):
     print(f"extracting images from {subr}", end="\r")
     images = set()
+    # set limit to n_images*5 because all posts without an image will be ignored.
     for submission in reddit.subreddit(subr).top('day', limit=n_images*5):
         image_url = process_submission(submission)
         if not image_url is None:
@@ -53,10 +56,9 @@ def process(event, context):
     reddit = reddit_login()
 
     subreddits_to_scrap = event['subreddits']
-    project = event['project']
     n_images = 50
     if 'number' in event:
-        n_images = min(50, event['number'])
+        n_images = min(200, event['number'])
 
     # Gather images
     images = set()
@@ -75,10 +77,9 @@ def process(event, context):
             requests.post(
                 os.path.join(base_url,endpoint),
                 data = json.dumps({
-                    "project" : "test_project",
                     "imageUrl": image_url
                     }),
-                    timeout=0.1)
+                timeout=0.1)
         except requests.exceptions.ReadTimeout:
             pass
 
